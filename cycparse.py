@@ -72,17 +72,20 @@ class Cyclic(object):
         """plot graph, one graph/core"""
         #get per core dict of latency:count
         x = self.latency.keys()
-        plt.figure(1)
-
+        legend_list = []
+        fig = plt.figure()
         for core in range(self.n_cores):
             y = [self.latency[i][core] for i in x]
-            plt.subplot(self.n_cores, 1, core+1)
-            plt.plot(x, y, 'r-')
-            plt.yscale('log')
-            plt.title("%sth CPU" %(core+1))
-            plt.xlabel("Latency(us), max %s us" %self.summary["max_latency"][core])
-            plt.ylabel("Number of latency samples")
+            plt.plot(x, y)
+            legend_list.append("CPU%s" %(core+1))
+        plt.yscale('log')
+        plt.title("Latency plot")
+        plt.xlabel("Latency(us)")
+        plt.ylabel("Number of latency samples")
+        plt.legend(legend_list)
         plt.show()
+        if self.args.saveplot:
+            fig.savefig(self.args.output, dpi=fig.dpi)
         plt.close('all')
 
 
@@ -112,6 +115,8 @@ def process_cmd_line():
     parser = argparse.ArgumentParser(description='Process cyclictest result')
     # --input defaults to std input
     parser.add_argument('-i', '--input', type=argparse.FileType('r'), default=sys.stdin, help='cyclictest result file')
+    parser.add_argument('-s', '--saveplot', action='store_true')
+    parser.add_argument('-o', '--output', default="plot.png", help='plot output file')
     parser.add_argument('--percentile', type=float, default=99.99, help='what latency range makes up this percentile')
     parser.add_argument('mode', default='calc', nargs='?', choices=['calc', 'plot'], help='processing mode')
     args = parser.parse_args()
