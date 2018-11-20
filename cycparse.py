@@ -94,20 +94,32 @@ class Cyclic(object):
             the self.percentile of the entire data set
         """
         self.percentile_latency = [0 for core in range(self.n_cores)]
-
-        for core in range(self.n_cores):
-            accu = 0
-            total = self.summary['total'][core]
-            # we need to collect this many counters
-            target = int(total * self.args.percentile / 100)
-            for latency, countlist in self.latency.iteritems():
-                accu += countlist[core]
+        per_core_flag = [0 for core in range(self.n_cores)]
+        aggregate_flag = 0
+        accu = 0
+        total = sum(self.summary['total'])
+        target = int(total * self.args.percentile / 100)
+        accu_per_core = [0 for core in range(self.n_cores)]
+        total_per_core = [self.summary['total'][core] for core in range(self.n_cores)]
+        target_per_core = [int(total_per_core[core] * self.args.percentile / 100) for core in range(self.n_cores)]
+        for latency, countlist in self.latency.iteritems():
+            if not aggregate_flag:
+                accu += sum(countlist)
                 if accu >= target:
-                    self.percentile_latency[core] = latency
-                    break
+                    aggregate_flag = 1
+                    aggregate_latency = latency
+            for core in range(self.n_cores):
+                if not per_core_flag[core]:
+                    accu_per_core[core] += countlist[core]
+                    if accu_per_core[core] >= target_per_core[core]:
+                        self.percentile_latency[core] = latency
+                        per_core_flag[core] = 1
         print "%s%% measured latency:" % self.args.percentile
-        for core in range(self.n_cores):
-            print "%s" % self.percentile_latency[core]
+        if self.args.aggregate:
+            print "%s" % aggregate_latency
+        else:
+            for core in range(self.n_cores):
+                print "%s" % self.percentile_latency[core]
 
 
 def process_cmd_line():
@@ -116,6 +128,7 @@ def process_cmd_line():
     # --input defaults to std input
     parser.add_argument('-i', '--input', type=argparse.FileType('r'), default=sys.stdin, help='cyclictest result file')
     parser.add_argument('-s', '--saveplot', action='store_true')
+    parser.add_argument('--aggregate', action='store_true')
     parser.add_argument('-o', '--output', default="plot.png", help='plot output file')
     parser.add_argument('--percentile', type=float, default=99.99, help='what latency range makes up this percentile')
     parser.add_argument('mode', default='calc', nargs='?', choices=['calc', 'plot'], help='processing mode')
