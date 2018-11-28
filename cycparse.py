@@ -127,9 +127,9 @@ def process_cmd_line():
     parser = argparse.ArgumentParser(description='Process cyclictest result')
     # --input defaults to std input
     parser.add_argument('-i', '--input', type=argparse.FileType('r'), default=sys.stdin, help='cyclictest result file')
-    parser.add_argument('-s', '--saveplot', action='store_true')
-    parser.add_argument('--aggregate', action='store_true')
-    parser.add_argument('-o', '--output', default="plot.png", help='plot output file')
+    parser.add_argument('-s', '--saveplot', action='store_true', help='save plot in file specified by --output')
+    parser.add_argument('--aggregate', action='store_true', help='aggregate data from all CPUs')
+    parser.add_argument('-o', '--output', default="plot.png", help='plot output file if --saveplot')
     parser.add_argument('--percentile', type=float, default=99.99, help='what latency range makes up this percentile')
     parser.add_argument('mode', default='calc', nargs='?', choices=['calc', 'plot'], help='processing mode')
     args = parser.parse_args()
