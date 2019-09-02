@@ -1,0 +1,11 @@
+apiVersion: v1 
+kind: Pod 
+metadata:
+  name: stress-only 
+spec:
+  containers:
+  - name: stress-only 
+    image: cscojianzhan/stress_only
+    env:
+    - name: CORES
+      value: "6"
