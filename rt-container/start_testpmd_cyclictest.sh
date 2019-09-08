@@ -19,6 +19,11 @@ function convert_number_range() {
 	echo "$cpus_list"
 }
 
+function bind_driver() {
+	local driver=$1
+	dpdk-devbind -u ${pci_west} ${pci_east}
+	dpdk-devbind -b ${driver} ${pci_west} ${pci_east}
+}
 
 # check env variables
 if [[ -z "${pci_west}" || -z "${pci_east}" ]]; then
@@ -32,6 +37,10 @@ fi
 
 if [[ -z "${RESULT_DIR}" ]]; then
 	RESULT_DIR="/tmp/cyclictest"
+fi
+
+if [[ -z "${vf_driver}" ]]; then
+	vf_driver="i40evf"
 fi
 
 # make sure the dir exists
@@ -60,6 +69,10 @@ else
 	mem="0,1024"
 fi
 
+# bind driver to vfio-pci
+bind_driver "vfio-pci"
+sleep 1
+
 testpmd_cmd="testpmd -l ${cpus[0]},${cpus[1]},${cpus[2]} --socket-mem ${mem} -n 4 --proc-type auto \
                  --file-prefix pg -w ${pci_west} -w ${pci_east} \
                  -- --nb-cores=2 --nb-ports=2 --portmask=3  --auto-start \
@@ -67,7 +80,7 @@ testpmd_cmd="testpmd -l ${cpus[0]},${cpus[1]},${cpus[2]} --socket-mem ${mem} -n 
 
 tmux new-session -s testpmd -d "${testpmd_cmd}"
 
-trap "tmux kill-session -t testpmd; exit 0;" SIGINT SIGTERM
+trap "tmux kill-session -t testpmd; bind_driver ${vf_driver}; exit 0;" SIGINT SIGTERM
 
 #cyclictest will be running on cpus[0,3,...]
 cyccore=${cpus[0]}
@@ -82,3 +95,5 @@ done
 cyclictest -q -D ${DURATION} -p 99 -t ${ccount} -a ${cyccore} -h 30 -m -n > ${RESULT_DIR}/cyclictest_${DURATION}.out
 # kill testpmd before exit 
 tmux kill-session -t testpmd
+sleep 1
+bind_driver ${vf_driver}

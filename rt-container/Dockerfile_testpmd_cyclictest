@@ -3,7 +3,8 @@ ARG CORES=1
 ARG DURATION=1m
 ENV CORES="${CORES}"
 ENV DURATION="${DURATION}"
-ENV RESULT_DIR=/cyclictest_results
+ENV RESULT_DIR=/tmp/cyclictest
+ENV pci_west pci_east vf_driver
 USER root
 COPY CentOS-rt.repo /etc/yum.repos.d/
 RUN yum -y --enablerepo=extras install epel-release dpdk dpdk-tools which pciutils tmux && \
