@@ -1,0 +1,15 @@
+FROM centos
+ARG CORES=1
+ARG DURATION=1m
+ENV CORES="${CORES}"
+ENV DURATION="${DURATION}"
+ENV RESULT_DIR=/cyclictest_results
+USER root
+COPY CentOS-rt.repo /etc/yum.repos.d/
+RUN yum -y --enablerepo=extras install epel-release dpdk dpdk-tools which pciutils tmux && \
+    yum install -y rt-tests && \
+    yum clean all && \
+    rm -rf /var/cache/yum
+COPY start_testpmd_cyclictest.sh /root
+RUN chmod 777 /root/start_testpmd_cyclictest.sh
+CMD ["/root/start_testpmd_cyclictest.sh"]
