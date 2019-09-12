@@ -4,13 +4,16 @@ ARG DURATION=1m
 ENV CORES="${CORES}"
 ENV DURATION="${DURATION}"
 ENV RESULT_DIR=/tmp/cyclictest
-ENV pci_west pci_east vf_driver
+ENV pci_west pci_east vf_driver rt_priority stress_tool cross_numa
 USER root
 COPY CentOS-rt.repo /etc/yum.repos.d/
-RUN yum -y --enablerepo=extras install epel-release dpdk dpdk-tools which pciutils tmux && \
-    yum install -y rt-tests && \
+RUN yum -y --enablerepo=extras install epel-release dpdk dpdk-tools which pciutils tmux rteval rteval-common rteval-loads stress-ng && \
+    yum install -y rt-tests wget && \
     yum clean all && \
     rm -rf /var/cache/yum
+RUN wget -O /root/dumb-init https://github.com/Yelp/dumb-init/releases/download/v1.2.2/dumb-init_1.2.2_amd64
+RUN chmod +x /root/dumb-init
 COPY start_testpmd_cyclictest.sh /root
 RUN chmod 777 /root/start_testpmd_cyclictest.sh
+ENTRYPOINT ["/root/dumb-init", "--"]
 CMD ["/root/start_testpmd_cyclictest.sh"]
