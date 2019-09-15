@@ -1,4 +1,15 @@
 #!/bin/bash
+function sigfunc() {
+	pid=`pgrep cyclictest`
+	[ -z ${pid} ] || kill ${pid}
+        tmux kill-session -t stress 2>/dev/null
+	pid=`pgrep ${stress}`
+        [ -z ${pid} ] || kill ${pid}
+	tmux kill-session -t testpmd
+	sleep 1
+	bind_driver ${vf_driver}
+	exit 0
+}
 
 # convert_number_range is from https://github.com/atheurer/dpdk-rhel-perf-tools/blob/master/virt-pin.sh
 function convert_number_range() {
@@ -43,6 +54,34 @@ if [[ -z "${vf_driver}" ]]; then
 	vf_driver="i40evf"
 fi
 
+if [[ -z "${stress_tool}" ]]; then
+	stress="false"
+elif [[ "${stress_tool}" != "stress-ng" && "${stress_tool}" != "rteval" ]]; then
+	stress="false"
+else
+	stress=${stress_tool}
+fi
+
+if [[ -z "${rt_priority}" ]]; then
+	echo "rt_priority not set"
+	rt_priority="false"
+elif [[ "${rt_priority}" =~ ^[0-9]+$ ]]; then
+	echo "rt_priority set as digits: ${rt_priority}"
+	if (( rt_priority > 99 )); then
+		echo "rt_priority value illegal, disabled"
+		rt_priority="false"
+	fi
+else
+	echo "rt_priority not set as digits"
+	rt_priority="false"
+fi
+
+if [[ -z "${cross_numa}" ]]; then
+	cross_numa="false"
+elif [[ "${cross_numa}" != "pci_only" && "${cross_numa}" != "memory_pci" ]]; then
+	cross_numa="false"
+fi
+
 # make sure the dir exists
 [ -d ${RESULT_DIR} ] || mkdir -p ${RESULT_DIR} 
 
@@ -63,10 +102,21 @@ if (( ${#cpus[@]} < 3 )); then
 	exit 1
 fi
 
-if (( ${cpus[1]}%2 == 0 )); then
-	mem="1024,0"
+mem="1024,1024"
+if false; then
+if [[ "${cross_numa}" == "false" || "${cross_numa}" == "pci_only" ]]; then
+	if (( ${cpus[1]}%2 == 0 )); then
+		mem="1024,0"
+	else
+		mem="0,1024"
+	fi
 else
-	mem="0,1024"
+	if (( ${cpus[1]}%2 == 0 )); then
+		mem="0,1024"
+	else
+		mem="1024,0"
+	fi
+fi
 fi
 
 # bind driver to vfio-pci
@@ -78,9 +128,14 @@ testpmd_cmd="testpmd -l ${cpus[0]},${cpus[1]},${cpus[2]} --socket-mem ${mem} -n 
                  -- --nb-cores=2 --nb-ports=2 --portmask=3  --auto-start \
                     --rxq=1 --txq=1 --rxd=2048 --txd=2048 >/tmp/testpmd"
 
-tmux new-session -s testpmd -d "${testpmd_cmd}"
+echo "running testpmd with RT priority: ${rt_priority}"
+if [[ "${rt_priority}" == "false" ]]; then
+	tmux new-session -s testpmd -d "${testpmd_cmd}"
+else
+	tmux new-session -s testpmd -d "chrt --fifo ${rt_priority} ${testpmd_cmd}"
+fi
 
-trap "tmux kill-session -t testpmd; bind_driver ${vf_driver}; exit 0;" SIGINT SIGTERM
+trap sigfunc TERM INT SIGUSR1
 
 #cyclictest will be running on cpus[0,3,...]
 cyccore=${cpus[0]}
@@ -91,6 +146,14 @@ while (( $cindex < ${#cpus[@]} )); do
 	cindex=$(($cindex + 1))
         ccount=$(($ccount + 1))
 done
+
+if false; then
+if [[ "$stress" == "stress-ng" ]]; then
+	taskset -c ${cyccore} stress-ng --cpu ${ccount} --cpu-load 100 --cpu-method loop &
+elif [[ "$stress" == "rteval" ]]; then
+	tmux new-session -s stress -d "rteval -v --onlyload"
+fi
+fi
 
 cyclictest -q -D ${DURATION} -p 99 -t ${ccount} -a ${cyccore} -h 30 -m -n > ${RESULT_DIR}/cyclictest_${DURATION}.out
 # kill testpmd before exit 

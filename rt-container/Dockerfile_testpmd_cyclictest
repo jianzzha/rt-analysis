@@ -7,7 +7,7 @@ ENV RESULT_DIR=/tmp/cyclictest
 ENV pci_west pci_east vf_driver rt_priority stress_tool cross_numa
 USER root
 COPY CentOS-rt.repo /etc/yum.repos.d/
-RUN yum -y --enablerepo=extras install epel-release dpdk dpdk-tools which pciutils tmux rteval rteval-common rteval-loads stress-ng && \
+RUN yum -y --enablerepo=extras install epel-release dpdk dpdk-tools which pciutils tmux && \
     yum install -y rt-tests wget && \
     yum clean all && \
     rm -rf /var/cache/yum
