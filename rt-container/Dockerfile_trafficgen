@@ -1,0 +1,44 @@
+FROM centos:7
+
+ENV TREX_VER "v2.61"
+
+RUN yum install -y \
+       git \
+       kmod \
+       pciutils \
+       python \
+       python-pip \
+       vim \
+       wget \
+       net-tools \
+       iproute2 \
+       libelf1 \
+       screen \
+       && mkdir -p /opt/trex \
+       && mkdir /var/log/tgen \
+       && wget --no-cache https://trex-tgn.cisco.com/trex/release/$TREX_VER.tar.gz \
+       && tar xzf $TREX_VER.tar.gz -C /opt/trex && ln -sf /opt/trex/${TREX_VER} current \
+       && rm -f /$TREX_VER.tar.gz \
+       && rm -f /opt/trex/$TREX_VER/trex_client_$TREX_VER.tar.gz \
+       && export PY_SITE_PATH=$(python -c "import site; print(site.getsitepackages()[0])" | sed -e "s/lib64/lib/") \
+       && cp -a /opt/trex/$TREX_VER/automation/trex_control_plane/interactive/trex ${PY_SITE_PATH} \
+       && rm -rf /opt/trex/$TREX_VER/automation/trex_control_plane/interactive/trex \
+       && sed -i -e "s/2048 /512 /" -e "s/2048\"/512\"/" /opt/trex/$TREX_VER/trex-cfg \
+       && yum remove -y python-pip \
+       && wget https://bootstrap.pypa.io/get-pip.py \
+       && python get-pip.py \
+       && pip install -U pbr \
+       && pip install -U setuptools \
+       && wget -O /root/dumb-init https://github.com/Yelp/dumb-init/releases/download/v1.2.2/dumb-init_1.2.2_amd64 \
+       && chmod +x /root/dumb-init \
+       && mkdir -p /root/tgen && git clone https://github.com/atheurer/lua-trafficgen.git /root/tgenrepo && cp /root/tgenrepo/{trex-query.py,trex-txrx.py,launch-trex.sh} /root/tgen/ \
+       && rm -rf /root/tgenrepo \
+       && yum remove -y wget git \
+       && yum clean all && rm -rf /var/cache/yum
+
+ENV TREX_EXT_LIBS "/opt/trex/$TREX_VER/external_libs"
+
+
+ENTRYPOINT ["/root/dumb-init", "--"]
+CMD ["/bin/bash"]
+
