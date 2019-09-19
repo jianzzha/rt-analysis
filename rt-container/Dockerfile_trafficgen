@@ -1,6 +1,7 @@
 FROM centos
 
 ENV TREX_VER "v2.53"
+ENV pci_list validation_seconds search_seconds sniff_seconds loss_ratio flows frame_size
 
 RUN yum -y --enablerepo=extras install epel-release dpdk dpdk-tools \
        git \
@@ -27,16 +28,17 @@ RUN yum -y --enablerepo=extras install epel-release dpdk dpdk-tools \
        && python get-pip.py \
        && pip install -U pbr \
        && pip install -U setuptools \
+       && pip install pathlib2 \
        && wget -O /root/dumb-init https://github.com/Yelp/dumb-init/releases/download/v1.2.2/dumb-init_1.2.2_amd64 \
        && chmod +x /root/dumb-init \
-       && mkdir -p /root/tgen && git clone https://github.com/atheurer/lua-trafficgen.git /root/tgenrepo && cp /root/tgenrepo/{trex-query.py,trex-txrx.py,trex_tg_lib.py,tg_lib.py} /root/tgen/ \
-       && rm -rf /root/tgenrepo \
        && yum remove -y wget git \
        && yum clean all && rm -rf /var/cache/yum
-COPY launch-trex.sh /root/tgen/
+COPY launch-trex.sh binary-search.py tg_lib.py trex-query.py trex-txrx.py trex_tg_lib.py /root/tgen/
+COPY trafficgen_entry.sh /root/
+RUN chmod 777 /root/trafficgen_entry.sh /root/tgen/launch-trex.sh /root/tgen/binary-search.py /root/tgen/trex-query.py /root/tgen/trex-txrx.py
 ENV TREX_EXT_LIBS "/opt/trex/$TREX_VER/external_libs"
 
 
 ENTRYPOINT ["/root/dumb-init", "--"]
-CMD ["/bin/bash"]
+CMD ["/root/trafficgen_entry.sh", "start"]
 
