@@ -28,14 +28,14 @@ RUN yum -y --enablerepo=extras install epel-release dpdk dpdk-tools \
        && python get-pip.py \
        && pip install -U pbr \
        && pip install -U setuptools \
-       && pip install pathlib2 \
+       && pip install pathlib2 flask \
        && wget -O /root/dumb-init https://github.com/Yelp/dumb-init/releases/download/v1.2.2/dumb-init_1.2.2_amd64 \
        && chmod +x /root/dumb-init \
        && yum remove -y wget git \
        && yum clean all && rm -rf /var/cache/yum
-COPY launch-trex.sh binary-search.py tg_lib.py trex-query.py trex-txrx.py trex_tg_lib.py /root/tgen/
+COPY api-server.py launch-trex.sh binary-search.py tg_lib.py trex-query.py trex-txrx.py trex_tg_lib.py /root/tgen/
 COPY trafficgen_entry.sh /root/
-RUN chmod 777 /root/trafficgen_entry.sh /root/tgen/launch-trex.sh /root/tgen/binary-search.py /root/tgen/trex-query.py /root/tgen/trex-txrx.py
+RUN chmod 777 /root/trafficgen_entry.sh /root/tgen/api-server.py /root/tgen/launch-trex.sh /root/tgen/binary-search.py /root/tgen/trex-query.py /root/tgen/trex-txrx.py
 ENV TREX_EXT_LIBS "/opt/trex/$TREX_VER/external_libs"
 
 

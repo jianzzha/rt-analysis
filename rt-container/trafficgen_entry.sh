@@ -74,6 +74,8 @@ else
     fi
     
     if [ "$1" == "api-server" ]; then
-        ./api-server.py --output-dir="${output_dir}" --pci-list="${pci_list}"
+        cd /root/tgen
+        eval ./launch-trex.sh --devices=${pci_list} --use-vlan=y
+        ./api-server.py --output-dir="${output_dir}" --device-pairs="${device_pairs}"
     fi
 fi
