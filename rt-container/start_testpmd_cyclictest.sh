@@ -32,6 +32,10 @@ function convert_number_range() {
 
 function bind_driver() {
 	local driver=$1
+        # for mlnx card, don't do anything
+        if [ "${driver}" == "mlx5_core" ]; then
+            return 0
+        fi
 	dpdk-devbind -u ${pci_west} ${pci_east}
 	dpdk-devbind -b ${driver} ${pci_west} ${pci_east}
 }
@@ -119,9 +123,11 @@ else
 fi
 fi
 
-# bind driver to vfio-pci
-bind_driver "vfio-pci"
-sleep 1
+# bind driver to vfio-pci unless it is mlnx nic
+if [ "${vf_driver}" != "mlx5_core" ]; then
+    bind_driver "vfio-pci"
+    sleep 1
+fi
 
 testpmd_cmd="testpmd -l ${cpus[0]},${cpus[1]},${cpus[2]} --socket-mem ${mem} -n 4 --proc-type auto \
                  --file-prefix pg -w ${pci_west} -w ${pci_east} \
