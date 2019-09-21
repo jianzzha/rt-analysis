@@ -11,7 +11,6 @@ RUN yum -y --enablerepo=extras install epel-release dpdk dpdk-tools \
        wget \
        net-tools \
        iproute2 \
-       libelf1 \
        screen \
        && mkdir -p /opt/trex \
        && mkdir /var/log/tgen \

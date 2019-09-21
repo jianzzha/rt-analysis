@@ -10,10 +10,10 @@ USER root
 COPY CentOS-rt.repo /etc/yum.repos.d/
 RUN yum -y --enablerepo=extras install epel-release which pciutils tmux rt-tests wget
 RUN if [ "${MLNX}" == "y" ]; then \
-        yum -y python net-tools git libtool automake gcc gcc-c++ \
+        yum install -y python net-tools git libtool automake gcc gcc-c++ \
                cmake autoconf unzip python-six numactl-devel \
-               make libibverbs.x86_64 libibverbs-devel.x86_64 \
-               librdmacm librdmacm-devel kernel-devel; \
+               make kernel-devel \
+               libibverbs libibverbs-devel rdma-core-devel; \
         KVER=$(uname -r) && DVER=$(rpm -q kernel-devel | sed -e 's/kernel-devel-//') && \
                mkdir -p /lib/modules/${KVER} && \
                ln -fs /usr/src/kernels/${DVER} /lib/modules/${KVER}/build; \
