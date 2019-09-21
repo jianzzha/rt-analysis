@@ -8,7 +8,6 @@ RUN yum -y --enablerepo=extras install epel-release dpdk dpdk-tools \
        pciutils \
        python \
        python-pip \
-       vim \
        wget \
        net-tools \
        iproute2 \
