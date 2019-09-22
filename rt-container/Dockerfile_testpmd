@@ -1,14 +1,8 @@
 FROM centos
 ARG MLNX=y
-ARG CORES=1
-ARG DURATION=1m
-ENV CORES="${CORES}"
-ENV DURATION="${DURATION}"
-ENV RESULT_DIR=/tmp/cyclictest
-ENV pci_west pci_east vf_driver rt_priority stress_tool cross_numa
+ENV pci_west pci_east vf_driver ring_size 
 USER root
-COPY CentOS-rt.repo /etc/yum.repos.d/
-RUN yum -y --enablerepo=extras install epel-release which pciutils tmux rt-tests wget
+RUN yum -y --enablerepo=extras install epel-release which pciutils tmux wget
 RUN if [ "${MLNX}" == "y" ]; then \
         yum install -y python net-tools git libtool automake gcc gcc-c++ \
                cmake autoconf unzip python-six numactl-devel \
@@ -23,7 +17,6 @@ RUN if [ "${MLNX}" == "y" ]; then \
                make install RTE_SDK=`pwd` T=x86_64-native-linux-gcc \
                     DESTDIR=/root/dpdk && \
                cd /root && install /root/dpdk/bin/testpmd /root/dpdk/sbin/dpdk-devbind '/usr/local/bin' && \
-               sed -i -r -e "s/line\.decode\(\)/line\.decode\('utf-8'\)/" /usr/local/bin/dpdk-devbind && \
                rm -rf /root/dpdk && \
                yum -y remove automake gcc gcc-c++ cmake autoconf make \
                       libtool git numactl-devel; \
@@ -32,7 +25,8 @@ RUN if [ "${MLNX}" == "y" ]; then \
 RUN yum clean all && rm -rf /var/cache/yum
 RUN wget -O /root/dumb-init https://github.com/Yelp/dumb-init/releases/download/v1.2.2/dumb-init_1.2.2_amd64
 RUN chmod +x /root/dumb-init
-COPY start_testpmd_cyclictest.sh /root
-RUN chmod 777 /root/start_testpmd_cyclictest.sh
+COPY start_testpmd.sh /root
+RUN chmod 777 /root/start_testpmd.sh
+RUN sed -i -r -e "s/line\.decode\(\)/line\.decode\('utf-8'\)/" /usr/local/bin/dpdk-devbind
 ENTRYPOINT ["/root/dumb-init", "--"]
-CMD ["/root/start_testpmd_cyclictest.sh"]
+CMD ["/root/start_testpmd.sh"]
