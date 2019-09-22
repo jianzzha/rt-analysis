@@ -1,12 +1,12 @@
 apiVersion: v1 
 kind: Pod 
 metadata:
-  name: cyclictest-no-stress 
+  name: cyclictest 
 spec:
   restartPolicy: Never 
   containers:
-  - name: cyclictest-no-stress 
-    image: cscojianzhan/cyclictest_no_stress
+  - name: cyclictest
+    image:  docker.io/cscojianzhan/cyclictest
     resources:
       limits:
         memory: "200Mi"
@@ -14,25 +14,21 @@ spec:
     env:
     - name: DURATION
       value: "24h"
-    - name: CORES
-      value: "1"
     securityContext:
-      #privileged: true
       capabilities:
         add:
           - SYS_NICE
           - SYS_RAWIO
           - IPC_LOCK
     volumeMounts:
-    - mountPath: /cyclictest_results
+    - mountPath: /tmp
       name: results-volume
     - mountPath: /dev/cpu_dma_latency
       name: cstate
   volumes:
   - name: results-volume
-    #emptyDir: {}
     hostPath:
-      path: /tmp/k8s_cyclictest_results
+      path: /tmp
   - name: cstate
     hostPath:
       path: /dev/cpu_dma_latency
