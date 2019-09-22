@@ -1,0 +1,121 @@
+---
+apiVersion: "k8s.cni.cncf.io/v1"
+kind: NetworkAttachmentDefinition
+metadata:
+  name: dpdk1
+  annotations:
+    k8s.v1.cni.cncf.io/resourceName: sriov.com/intel_sriov_netdevice
+spec:
+  config: '{
+  "type": "sriov",
+  "cniVersion": "0.3.1",
+  "name": "dpdk1",
+  "deviceID": "0000:3b:02.0",
+  "dpdk": {
+       "pci_addr": "0000:3b:02.0",
+       "kernel_driver": "i40evf",
+       "dpdk_driver": "vfio-pci",
+       "dpdk_tool": "/usr/sbin/dpdk-devbind"
+       },
+  "spoofchk": "off",
+  "trust": "on"
+  }'
+---
+apiVersion: "k8s.cni.cncf.io/v1"
+kind: NetworkAttachmentDefinition
+metadata:
+  name: dpdk2
+  annotations:
+    k8s.v1.cni.cncf.io/resourceName: sriov.com/intel_sriov_netdevice
+spec:
+  config: '{
+  "type": "sriov",
+  "cniVersion": "0.3.1",
+  "name": "dpdk2",
+  "deviceID": "0000:3b:0a.0",
+  "dpdk": {
+       "pci_addr": "0000:3b:0a.0",
+       "kernel_driver": "i40evf",
+       "dpdk_driver": "vfio-pci",
+       "dpdk_tool": "/usr/sbin/dpdk-devbind"
+       },
+  "spoofchk": "off",
+  "trust": "on"
+  }'
+---
+apiVersion: "k8s.cni.cncf.io/v1"
+kind: NetworkAttachmentDefinition
+metadata:
+  name: dpdk3
+  annotations:
+    k8s.v1.cni.cncf.io/resourceName: sriov.com/intel_sriov_netdevice
+spec:
+  config: '{
+  "type": "sriov",
+  "cniVersion": "0.3.1",
+  "name": "dpdk3",
+  "deviceID": "0000:86:02.0",
+  "dpdk": {
+       "pci_addr": "0000:86:02.0",
+       "kernel_driver": "i40evf",
+       "dpdk_driver": "vfio-pci",
+       "dpdk_tool": "/usr/sbin/dpdk-devbind"
+       },
+  "spoofchk": "off",
+  "trust": "on"
+  }'
+---
+apiVersion: "k8s.cni.cncf.io/v1"
+kind: NetworkAttachmentDefinition
+metadata:
+  name: dpdk4
+  annotations:
+    k8s.v1.cni.cncf.io/resourceName: sriov.com/intel_sriov_netdevice
+spec:
+  config: '{
+  "type": "sriov",
+  "cniVersion": "0.3.1",
+  "name": "dpdk4",
+  "deviceID": "0000:86:0a.0",
+  "dpdk": {
+       "pci_addr": "0000:86:0a.0",
+       "kernel_driver": "i40evf",
+       "dpdk_driver": "vfio-pci",
+       "dpdk_tool": "/usr/sbin/dpdk-devbind"
+       },
+  "spoofchk": "off",
+  "trust": "on"
+  }'
+---
+apiVersion: "k8s.cni.cncf.io/v1"
+kind: NetworkAttachmentDefinition
+metadata:
+  name: mlnx1
+  annotations:
+    k8s.v1.cni.cncf.io/resourceName: sriov.com/mlnx_sriov_netdevice
+spec:
+  config: '{
+  "type": "sriov",
+  "cniVersion": "0.3.1",
+  "name": "mlnx1",
+  "deviceID": "0000:af:00.1",
+  "spoofchk": "off",
+  "trust": "on"
+  }'
+---
+apiVersion: "k8s.cni.cncf.io/v1"
+kind: NetworkAttachmentDefinition
+metadata:
+  name: mlnx2
+  annotations:
+    k8s.v1.cni.cncf.io/resourceName: sriov.com/mlnx_sriov_netdevice
+spec:
+  config: '{
+  "type": "sriov",
+  "cniVersion": "0.3.1",
+  "name": "mlnx2",
+  "deviceID": "0000:d8:00.1",
+  "spoofchk": "off",
+  "trust": "on"
+  }'
+

@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: testpmd
+  annotations:
+    k8s.v1.cni.cncf.io/networks: dpdk3, dpdk4
+spec:
+  restartPolicy: Never
+  #hostNetwork: true
+  containers:
+  - name: appcntr1
+    image: docker.io/cscojianzhan/testpmd
+    imagePullPolicy: IfNotPresent
+    env:
+    - name: pci_west
+      #value: 0000:3b:02.0
+      value: "0000:86:02.0"
+      #value: 0000:af:00.1
+    - name: pci_east
+      #value: 0000:3b:0a.0
+      value: "0000:86:0a.0"
+      #value: 0000:d8:00.1
+    - name: vf_driver
+      value: i40evf
+      #value: mlx5_core
+    - name: ring_size
+      value: "2048"
+    securityContext:
+      privileged: true
+      capabilities:
+        add:
+          - SYS_NICE
+          - SYS_RAWIO
+          - IPC_LOCK
+    volumeMounts:
+    - mountPath: /dev/hugepages
+      name: hugepage
+    - mountPath: /sys
+      name: sys
+    - mountPath: /dev
+      name: dev
+    resources:
+      limits:
+        cpu: 4
+        hugepages-1Gi: 2Gi
+        memory: 2Gi
+      requests:
+        cpu: 4
+        hugepages-1Gi: 2Gi
+        memory: 2Gi
+  volumes:
+  - name: sys
+    hostPath:
+      path: /sys 
+  - name: dev
+    hostPath:
+      path: /dev
+  - name: hugepage
+    emptyDir:
+      medium: HugePages
+

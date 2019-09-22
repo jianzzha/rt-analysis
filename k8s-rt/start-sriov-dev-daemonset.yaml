@@ -1,0 +1,66 @@
+# 4.1 SR-IOV Device Plugin ServiceAccount
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sriov-device-plugin
+  namespace: kube-system
+
+# 5.1 SR-IOV Device Plugin DaemonSet
+---
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  name: kube-sriov-device-plugin-amd64
+  namespace: kube-system
+  labels:
+    tier: node
+    app: sriovdp
+spec:
+  template:
+    metadata:
+      labels:
+        tier: node
+        app: sriovdp
+    spec:
+      hostNetwork: true
+      hostPID: true
+      nodeSelector:
+        beta.kubernetes.io/arch: amd64
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        operator: Exists
+        effect: NoSchedule
+      serviceAccountName: sriov-device-plugin
+      containers:
+      - name: kube-sriovdp
+        image: nfvpe/sriov-device-plugin:latest
+        args:
+          - --log-dir=sriovdp
+          - --log-level=10
+          - --resource-prefix=sriov.com
+        securityContext:
+          privileged: true 
+        volumeMounts:
+        - name: devicesock
+          mountPath: /var/lib/kubelet/
+          readOnly: false
+        - mountPath: /etc/pcidp/
+          name: config
+          readOnly: true
+        - name: log
+          mountPath: /var/log
+      volumes:
+        - name: log
+          hostPath:
+            path: /var/log
+        - name: devicesock
+          hostPath:
+            path: /var/lib/kubelet/
+        - name: config
+          configMap:
+            name: sriovdp-config
+            items:
+            - key: config.json 
+              path: config.json 
+

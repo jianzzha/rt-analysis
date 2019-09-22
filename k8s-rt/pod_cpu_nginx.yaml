@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: 1cpu-nginx
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+    resources:
+      limits:
+        memory: "200Mi"
+        cpu: "1"
+#apiVersion: apps/v1
+#kind: Deployment
+#metadata:
+#  name: exclusive-cpu-nginx-deployment
+#spec:
+#  replicas: 1 
+#  selector:
+#    matchLabels:
+#      name: 1cpu-nginx
+#  template:
+#    metadata:
+#      labels:
+#        name: 1cpu-nginx 
+#    spec:
+#      containers:
+#      - name: 1cpu-nginx
+#        image: nginx
+#        resources:
+#          limits:
+#            memory: "200Mi"
+#            cpu: "1"
