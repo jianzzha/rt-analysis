@@ -95,7 +95,6 @@ done
 
 # first parse the cpu list that can be used for testpmd
 cpulist=`cat /proc/self/status | grep Cpus_allowed_list: | cut -f 2`
-#cpulist="12,10,14,16"
 cpulist=`convert_number_range ${cpulist} | tr , '\n' | sort | uniq`
 
 declare -a cpus
@@ -153,12 +152,10 @@ while (( $cindex < ${#cpus[@]} )); do
         ccount=$(($ccount + 1))
 done
 
-if false; then
 if [[ "$stress" == "stress-ng" ]]; then
 	taskset -c ${cyccore} stress-ng --cpu ${ccount} --cpu-load 100 --cpu-method loop &
 elif [[ "$stress" == "rteval" ]]; then
 	tmux new-session -s stress -d "rteval -v --onlyload"
-fi
 fi
 
 cyclictest -q -D ${DURATION} -p 99 -t ${ccount} -a ${cyccore} -h 30 -m -n > ${RESULT_DIR}/cyclictest_${DURATION}.out
