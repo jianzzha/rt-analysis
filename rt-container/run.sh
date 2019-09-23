@@ -3,6 +3,8 @@ docker run  --rm --device=/dev/cpu_dma_latency:/dev/cpu_dma_latency --cap-add=SY
 
 docker run -it --rm --privileged  -v /sys:/sys -v /dev:/dev -v /lib/modules:/lib/modules --cpuset-cpus 2,4,6,8 docker.io/cscojianzhan/trafficgen bash
 
+docker run --privileged --rm -it -v /dev:/dev -v /sys:/sys --net=host --device=/dev/hugepages:/dev/hugepages docker.io/cscojianzhan/mlnx_dpdk bash
+
 # this is a series command to run inside tgen container for test
 ./launch-trex.sh --devices=0000:03:00.0,0000:03:00.1 --use-vlan=y 
 
