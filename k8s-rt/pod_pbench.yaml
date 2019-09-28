@@ -1,0 +1,25 @@
+apiVersion: v1 
+kind: Pod 
+metadata:
+  name: pbench 
+spec:
+  restartPolicy: Never
+  hostNetwork: true
+  containers:
+  - name: pbench 
+    image: docker.io/cscojianzhan/pbench-agent
+    ports:
+      - containerPort: 2222
+        hostPort: 2222
+    securityContext:
+      privileged: true
+    volumeMounts:
+    - mountPath: /sys
+      name: sys
+      readOnly: true
+  volumes:
+  - name: sys
+    hostPath:
+      path: /sys
+
+  
