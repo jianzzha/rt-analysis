@@ -1,0 +1,9 @@
+####### from fix-pbench-register-tool.txt ########
+if [[ $remote =~ ":" ]]; then
+    original=$remote
+    remote=$(echo $original | cut -d: -f1)
+    sshport=$(echo $original | cut -d: -f2)
+    ssh_opts="${ssh_opts} -p $sshport"
+fi
+##################################
+
