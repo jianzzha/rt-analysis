@@ -27,6 +27,6 @@ RUN wget -O /root/dumb-init https://github.com/Yelp/dumb-init/releases/download/
 RUN chmod +x /root/dumb-init
 COPY start_testpmd.sh /root
 RUN chmod 777 /root/start_testpmd.sh
-RUN sed -i -r -e "s/line\.decode\(\)/line\.decode\('utf-8'\)/" /usr/local/bin/dpdk-devbind
+RUN [ "${MLNX}" == "y" ] && sed -i -r -e "s/line\.decode\(\)/line\.decode\('utf-8'\)/" /usr/local/bin/dpdk-devbind || true
 ENTRYPOINT ["/root/dumb-init", "--"]
 CMD ["/root/start_testpmd.sh"]
