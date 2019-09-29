@@ -1,10 +1,23 @@
 FROM centos
 
+ENV TREX_VER "v2.53"
+ENV pci_list validation_seconds search_seconds sniff_seconds loss_ratio flows frame_size
+
 RUN yum -y --enablerepo=extras install epel-release centos-release-scl \
        python \
        wget which \
+       git \
+       pciutils \
        net-tools \
-       iproute2
+       iproute2 \
+       screen \
+       dpdk dpdk-tools
+RUN mkdir -p /opt/trex &&  wget --no-cache https://trex-tgn.cisco.com/trex/release/$TREX_VER.tar.gz \
+       && tar xzf $TREX_VER.tar.gz -C /opt/trex && ln -sf /opt/trex/${TREX_VER} /opt/trex/current \
+       && /usr/bin/rm -f /$TREX_VER.tar.gz && /usr/bin/rm -f /opt/trex/$TREX_VER/trex_client_$TREX_VER.tar.gz \
+       && export PY_SITE_PATH=$(python -c "import site; print(site.getsitepackages()[0])" | sed -e "s/lib64/lib/") \
+       && ln -sf /opt/trex/$TREX_VER/automation/trex_control_plane/interactive/trex ${PY_SITE_PATH} \
+       && pushd /opt >/dev/null && git clone https://github.com/atheurer/lua-trafficgen.git && popd >/dev/null
 RUN wget -O /etc/yum.repos.d/ndokos-pbench-epel-7.repo https://copr.fedorainfracloud.org/coprs/ndokos/pbench/repo/epel-7/ndokos-pbench-epel-7.repo \
        && wget -O /etc/yum.repos.d/pbench.repo http://pbench.perf.lab.eng.bos.redhat.com/repo/yum.repos.d/pbench.repo \
        && yum -y install perl-JSON-XS pbench-agent-internal pbench-sysstat \
@@ -17,19 +30,15 @@ RUN wget -O /etc/yum.repos.d/ndokos-pbench-epel-7.repo https://copr.fedorainfrac
        && ssh-keygen -t rsa1 -f /etc/ssh/ssh_host_key -N "" \
        && mkdir -p /root/.ssh && chmod 700 /root/.ssh \
        && ssh-keygen -t rsa -f /root/.ssh/id_rsa -N ""
-RUN yum clean all && rm -rf /var/cache/yum
+COPY pbench-patches /opt/pbench-agent/util-scripts/  
+
 ENV NOTVISIBLE "in users profile"
 RUN echo "export VISIBLE=now" >> /etc/profile
 ENV PATH="/opt/pbench-agent/util-scripts:/opt/pbench-agent/bench-scripts:${PATH}"
 RUN wget -O /root/dumb-init https://github.com/Yelp/dumb-init/releases/download/v1.2.2/dumb-init_1.2.2_amd64 \
        && chmod +x /root/dumb-init \
-       && yum clean all && rm -rf /var/cache/yum
-
-COPY fix-pbench-register-tool.txt fix-pbench-clear-tools.txt /root/
+       && yum clean all && /usr/bin/rm -rf /var/cache/yum
 WORKDIR /root
-RUN LINE_NUMBERS=$(sed -n -r '/ssh +\$ssh_opts/=' /opt/pbench-agent/util-scripts/pbench-register-tool) && for LINE in ${LINE_NUMBERS}; do sed -i "$((${LINE} - 1))r fix-pbench-register-tool.txt" /opt/pbench-agent/util-scripts/pbench-register-tool; break; done
-RUN LINE_NUMBERS=$(sed -n -r '/ssh +\$ssh_opts/=' /opt/pbench-agent/util-scripts/pbench-clear-tools) && for LINE in ${LINE_NUMBERS}; do sed -i "$((${LINE} - 1))r fix-pbench-clear-tools.txt" /opt/pbench-agent/util-scripts/pbench-clear-tools; break; done
-RUN rm -rf fix-pbench-register-tool.txt fix-pbench-clear-tools.txt
 
 EXPOSE 22
 ENTRYPOINT ["/root/dumb-init", "--"]

@@ -1,0 +1,196 @@
+#!/bin/bash
+# -*- mode: shell-script; indent-tabs-mode: t; sh-basic-offset: 8; sh-indentation: 8; sh-indent-for-case-alt: + -*-
+
+script_path=`dirname $0`
+script_name=`basename $0`
+pbench_bin="`cd ${script_path}/..; /bin/pwd`"
+
+# source the base script
+. "$pbench_bin"/base
+
+# The sole purpose of this script is to ensure a tool
+# of your choosing is used during the execution of a benchmark.
+# For a list of performance tools, look at the
+# $pbench_bin/tool-scripts directory.
+
+# Defaults
+remote=""
+group=default
+options=""
+
+function usage() {
+	printf "usage:\n"
+	printf "$script_name --name=<tool-name> [--group=<group-name>] [--remote=<remote-host>] -- [all tool specific options here]\n"
+	printf "for a list of tool specific options, run $pbench_bin/tool-scripts/<tool-name> --help\n"
+}
+
+# Process options and arguments
+opts=$(getopt -q -o hn:r:l:g: --longoptions "help,name:,remote:,label:,group:" -n "getopt.sh" -- "$@");
+if [ $? -ne 0 ]; then
+	printf "\n"
+	printf "%s\n" $*
+	printf "$script_name: you specified an invalid option\n\n"
+	usage
+	exit 1
+fi
+# here we process only the arguments before the "--"
+# these are argument for pbench-register-tools
+# all agruments after "--" are for the tool itself
+eval set -- "$opts";
+while true; do
+	case "$1" in
+		-n|--name)
+		shift;
+		if [ -n "$1" ]; then
+			name="$1"
+			shift;
+		fi
+		;;
+		-r|--remote)
+		shift;
+		if [ -n "$1" ]; then
+			remote="$1"
+			shift;
+		fi
+		;;
+		-l|--label) # used for remote only
+		shift;
+		if [ -n "$1" ]; then
+			label="$1"
+			shift;
+		fi
+		;;
+		-g|--group)
+		shift;
+		if [ -n "$1" ]; then
+			group="$1"
+			shift;
+		fi
+		;;
+		-h|--help)
+		usage;
+		exit 0
+		;;
+		--)
+		shift;
+		break;
+		;;
+	esac
+done
+
+
+if [ -z $name ]; then
+	echo "I need a tool name in order to register it (--name=mytoolname)"
+	exit 1
+fi
+
+rc=1
+# the remainder of $@ is now tool-specific options
+# the best way to not mess up arguments while seems to be using an array
+count=0
+tool_opt_array_cmd=""
+while true; do
+	if [ -z "$1" ]; then
+		break
+	fi
+	tool_opts[$count]="$1"
+	if [ ! -z "$remote" ]; then
+		# build an array-construction command, to be used with ssh
+		if [ $count -eq 0 ]; then
+			tool_opt_array_cmd="tool_opts[$count]=\"$1\";"
+		else
+			tool_opt_array_cmd="$tool_opt_array_cmd tool_opts[$count]=\"$1\";"
+		fi
+	fi
+	let count=$count+1
+	shift
+done
+debug_log "tool_opts: ${tool_opts[@]}"
+
+#FIXME: this does not check for ipv6
+local_ips=`ip a | grep "inet " | awk '{print $2}' |  awk -F/ '{print $1}'`
+local_interfaces="$local_ips $hostname $full_hostname localhost"
+# if for some reason ther user specified "--remote=$a" and $a is a local interface,
+# we must remove it, so we don't ssh to ourselves
+if [ ! -z "$remote" ]; then
+	for local_interface in $local_interfaces; do
+		if [ "$remote" == "$local_interface" ]; then
+			debug_log "The remote host you have provided, $remote, matches a local interface, so we will register this tool locally"
+			remote=""
+		fi
+	done
+fi
+
+if [ -z "$remote" ]; then
+	# a local tool registration
+	if [ -e "$pbench_bin/tool-scripts/$name" ]; then
+		debug_log "checking to see if tool is installed..."
+		$pbench_bin/tool-scripts/$name --install "${tool_opts[@]}"
+		rc=$?
+	else
+		debug_log "Could not find $name in $pbench_bin/tool-scripts.  Has this tool been integrated in to pbench?"
+	fi
+	# remeber the tool and its options
+	if [ "$rc" == "0" ]; then
+		if [ ! -d "$pbench_run/tools-$group" ]; then
+			mkdir -p "$pbench_run/tools-$group"
+		fi
+		this_tool_file="$pbench_run/tools-$group/$name"
+		/bin/rm -f "$this_tool_file"
+		touch "$this_tool_file"
+		i=0
+		# tool options are 1 per line
+		while [ $i -lt $count ]; do
+			echo "${tool_opts[$i]}" >>"$this_tool_file"
+			((i++))
+		done
+		printf "$name tool is now registered in group $group\n"
+		# if we have a label, update the label in the tool directory
+		if [ "$label" != "" ]; then
+			this_label_file="$pbench_run/tools-$group/label"
+			/bin/rm -f "$this_label_file"
+			echo "$label" >"$this_label_file"
+		fi
+	else
+		error_log "Failed to install tool $name ($pbench_bin/tool-scripts/$name --install \"${tool_opts[@]}\")\n"
+	fi
+else
+	# register this tool on the remote host
+	if [ -z "$label" ]; then
+		label_opt=""
+	else
+		label_opt="--label=$label"
+	fi
+	# can't really pass an array of tool options over ssh, so here we will actually construct the array within the ssh call, then reference that array
+	debug_log "$tool_opt_array_cmd"' pbench-register-tool --name='"$name"' --group='"$group"' $label_opt -- "${tool_opts[@]}" 2>&1'
+        ####### container insert ########
+        original=$remote
+        if [[ $original =~ ":" ]]; then
+            remote=$(echo $original | cut -d: -f1)
+            sshport=$(echo $original | cut -d: -f2)
+            ssh_opts="${ssh_opts} -p $sshport"
+        fi
+        ##################################
+
+	ssh $ssh_opts $remote "$tool_opt_array_cmd"' pbench-register-tool --name='"$name"' --group='"$group" $label_opt' -- "${tool_opts[@]}" 2>&1' | sed -e 's/\(.*\)/'[$remote]'\1/g'
+        ####################
+        remote=$original
+        ####################
+	rc=$?
+	if [ "$rc" != "0" ]; then
+		error_log "Failed to register tool $name remotely\n"
+	fi
+	if [ ! -d "$pbench_run/tools-$group" ]; then
+		mkdir -p "$pbench_run/tools-$group"
+	fi
+	this_tool_file="$pbench_run/tools-$group/remote@$remote"
+	/bin/rm -f "$this_tool_file"
+	# the specific tool options are stored on the remote host, so there is no need to keep them here
+	# however, we do use this file to store the label for this remote host [if any]
+	if [ -z "$label" ]; then
+		touch "$this_tool_file"
+	else
+		echo "$label" >"$this_tool_file"
+	fi
+fi
+exit $rc
