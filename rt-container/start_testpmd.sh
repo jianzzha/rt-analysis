@@ -36,6 +36,18 @@ function bind_driver() {
 }
 
 # check env variables
+pci_list=$(env | sed -n -r -e 's/PCIDEVICE.*=(.*)/\1/p' | tr ',\n' ' ')
+if [ -n "${pci_list}" ]; then
+    pci_count=$(echo "${pci_list}" | wc -w )
+    if (( ${pci_count} != 2 )); then
+        echo "this container only support two pci network devices!"
+        exit 1
+    else
+        pci_west=$(echo "${pci_list}" | cut -f1 -d ' ')
+        pci_east=$(echo "${pci_list}" | cut -f2 -d ' ')
+    fi
+fi
+    
 if [[ -z "${pci_west}" || -z "${pci_east}" ]]; then
 	echo "need env vars: pci_west, pci_east"
         exit 1
@@ -48,6 +60,8 @@ fi
 if [[ -z "${ring_size}" ]]; then
         ring_size=2048
 fi
+
+echo "pci_west ${pci_west} pci_east ${pci_east} vf_driver ${vf_driver} ring_size ${ring_size}"
 
 for cmd in testpmd dpdk-devbind; do
     command -v $cmd >/dev/null 2>&1 || { echo >&2 "$cmd required but not installed.  Aborting"; exit 1; }
