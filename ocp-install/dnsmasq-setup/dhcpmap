@@ -1,0 +1,6 @@
+52:54:00:4e:f5:00,2.2.2.10,bootstrap.ocp.example.com
+52:54:00:4e:f5:01,2.2.2.11,master-0.ocp.example.com
+52:54:00:4e:f5:02,2.2.2.12,master-1.ocp.example.com
+52:54:00:4e:f5:03,2.2.2.13,master-2.ocp.example.com
+52:54:00:4e:f5:04,2.2.2.14,vmworker.ocp.example.com
+e4:43:4b:2a:b8:88,2.2.2.16,node-1.ocp.example.com

@@ -1,0 +1,8 @@
+{
+"id": "vmworker",
+"name": "vm worker",
+"profile": "vmworker",
+"selector": {
+"mac": "52:54:00:4e:f5:04"
+}
+}

@@ -1,0 +1,21 @@
+{
+"id": "bootstrap",
+"name": "Bootstrap",
+"ignition_id": "bootstrap.ign",
+"boot": {
+"kernel": "/assets/rhcos-43.80.20191002.1-installer-kernel-x86_64",
+"initrd": [
+"/assets/rhcos-43.80.20191002.1-installer-initramfs.x86_64.img"
+],
+"args": [
+"ip=dhcp",
+"rd.neednet=1",
+"console=tty0",
+"console=ttyS0",
+"coreos.inst=yes",
+"coreos.inst.install_dev=vda",
+"coreos.inst.image_url=http://matchbox.ocp.example.com:8080/assets/rhcos-43.80.20191002.1-metal.x86_64.raw.gz",
+"coreos.inst.ignition_url=http://matchbox.ocp.example.com:8080/ignition?mac=${mac:hexhyp}"
+]
+}
+}

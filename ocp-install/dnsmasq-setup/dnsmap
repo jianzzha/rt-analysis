@@ -1,0 +1,7 @@
+2.2.2.10 bootstrap.ocp.example.com
+2.2.2.11 etcd-0.ocp.example.com
+2.2.2.12 etcd-1.ocp.example.com
+2.2.2.13 etcd-2.ocp.example.com
+2.2.2.14 vmworker.ocp.example.com
+2.2.2.16 node-1.ocp.example.com
+2.2.2.1 matchbox.ocp.example.com api.ocp.example.com api-int.ocp.example.com

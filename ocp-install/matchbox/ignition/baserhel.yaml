@@ -1,0 +1,7 @@
+---
+passwd:
+  users:
+    - name: core
+      ssh_authorized_keys:
+        - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDUEN37aT96GcyMYDsVh7hNZ5Wsbk+jJD9OynZBSEEPE6nnQ2jcoK2c1AV+6Wu+MHRjjawz4w0QFfCvqHe0JBihxTGLrQM1vzUjHZVhAelLhBOV2594Wpab9J5MFT4Q+3yYrdbkWzH4JYMOwQeW3ps29xRl6jKHj3FBUVuZd22e+YvRwEWtUYgGCus3vAZcih4AFMD2WR0Jj6KafdBDK3qg9tJbwYCb3oGsGPEXY4IsCRF/5An5RR/rtfm4BCPQ48PNcseWjm2d95x/FJ+lLe1M6vcWU/okF9MVnBwa6PI9Suw5opGxFFDd/H82mwVasKGiKh4nOgEqyrvS0j4oqw6z root@e25-h21-740xd.alias.bos.scalelab.redhat.com"
+      password_hash: "$1$WxZexzdn$9clrD7Is0azp71QgP62QE1"

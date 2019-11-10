@@ -1,0 +1,8 @@
+{
+"id": "bootstrap",
+"name": "Bootstrap server",
+"profile": "bootstrap",
+"selector": {
+"mac": "52:54:00:4e:f5:00"
+}
+}
