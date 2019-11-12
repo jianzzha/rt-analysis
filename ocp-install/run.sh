@@ -37,6 +37,7 @@ if ! pgrep matchbox; then
     systemctl start matchbox
     rm -rf /tmp/matchbox*
     popd
+    mkdir -p /var/lib/matchbox/
     cp -rf matchbox/{groups,profiles} /var/lib/matchbox/ 
 fi    
 
