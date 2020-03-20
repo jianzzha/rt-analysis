@@ -49,12 +49,14 @@ if [ -n "${pci_list}" ]; then
 fi
     
 if [[ -z "${pci_west}" || -z "${pci_east}" ]]; then
-	echo "need env vars: pci_west, pci_east"
+	echo "Coudln't get assigned pci slot info from enviroment vars starting with PCIDEVICE"
         exit 1
 fi
 
+vf_driver=$(ls /sys/bus/pci/devices/${pci_west}/driver/module/drivers/| sed -n -r 's/.*:(.+)/\1/p')
 if [[ -z "${vf_driver}" ]]; then
-	vf_driver="i40evf"
+	echo "couldn't get driver info from /sys/bus/pci/devices/${pci_west}/driver/module/drivers/"
+	exit 1	
 fi
 
 if [[ -z "${ring_size}" ]]; then
@@ -90,9 +92,13 @@ fi
 testpmd_cmd="testpmd -l ${cpus[0]},${cpus[1]},${cpus[2]} --socket-mem ${mem} -n 4 --proc-type auto \
                  --file-prefix pg -w ${pci_west} -w ${pci_east} \
                  -- --nb-cores=2 --nb-ports=2 --portmask=3  --auto-start \
-                    --rxq=1 --txq=1 --rxd=${ring_size} --txd=${ring_size} >/tmp/testpmd"
+                    --rxq=1 --txq=1 --rxd=${ring_size} --txd=${ring_size}"
 
-tmux new-session -s testpmd -d "${testpmd_cmd}"
+if [[ "${manual:-n}" == "y" ]]; then
+	echo "${testpmd_cmd}"
+else
+	tmux new-session -s testpmd -d "${testpmd_cmd}"
+fi
 
 trap sigfunc TERM INT SIGUSR1
 
