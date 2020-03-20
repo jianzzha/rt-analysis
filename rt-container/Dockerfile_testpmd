@@ -1,21 +1,21 @@
 FROM centos
 ARG MLNX=y
-ENV pci_west pci_east vf_driver ring_size 
 USER root
 RUN yum -y --enablerepo=extras install epel-release which pciutils tmux wget
 RUN if [ "${MLNX}" == "y" ]; then \
-        yum install -y python net-tools git libtool automake gcc gcc-c++ \
-               cmake autoconf unzip python-six numactl-devel \
-               make kernel-devel \
-               libibverbs libibverbs-devel rdma-core-devel; \
+        yum install -y python3 net-tools git libtool automake gcc gcc-c++ \
+               cmake autoconf unzip python3-six numactl-devel \
+               make kernel-devel mstflint numactl-libs \
+               libibverbs libibverbs-devel rdma-core-devel \
+	       libibverbs-utils; \
+	yum install -y https://linux.mellanox.com/public/repo/mlnx_ofed/5.0-1.0.0.0/rhel8.0/x86_64/COMMON/mft-4.14.0-105.x86_64.rpm; \
         KVER=$(uname -r) && DVER=$(rpm -q kernel-devel | sed -e 's/kernel-devel-//') && \
                mkdir -p /lib/modules/${KVER} && \
                ln -fs /usr/src/kernels/${DVER} /lib/modules/${KVER}/build; \
         cd /root && git clone https://github.com/DPDK/dpdk.git && \
                cd /root/dpdk && git checkout origin/releases && \
-               sed -i -r -e 's/(.*MLX5.*)=n/\1=y/' ./config/common_base && \
                make install RTE_SDK=`pwd` T=x86_64-native-linux-gcc \
-                    DESTDIR=/root/dpdk && \
+                    DESTDIR=/root/dpdk CONFIG_RTE_LIBRTE_MLX5_PMD=y && \
                cd /root && install /root/dpdk/bin/testpmd /root/dpdk/sbin/dpdk-devbind '/usr/local/bin' && \
                rm -rf /root/dpdk && \
                yum -y remove automake gcc gcc-c++ cmake autoconf make \
