@@ -7,7 +7,6 @@ RUN yum -y --enablerepo=extras install epel-release dpdk dpdk-tools \
        		pciutils \
        		python \
        		net-tools \
-       		iproute2 \
        		tmux \
        && mkdir -p /opt/trex \
        && mkdir -p /var/log/tgen \
@@ -21,7 +20,6 @@ RUN yum -y --enablerepo=extras install epel-release dpdk dpdk-tools \
        && tar xzf $TREX_VER.tar.gz -C /opt/trex && ln -sf /opt/trex/${TREX_VER} /opt/trex/current \
        && rm -f $TREX_VER.tar.gz \
        && rm -f /opt/trex/$TREX_VER/trex_client_$TREX_VER.tar.gz \
-       && curl -k https://bootstrap.pypa.io/get-pip.py | python - \
        && curl -L -k -o /root/dumb-init https://github.com/Yelp/dumb-init/releases/download/v1.2.2/dumb-init_1.2.2_x86_64 \
        && chmod +x /root/dumb-init \
        && yum clean all && rm -rf /var/cache/yum
