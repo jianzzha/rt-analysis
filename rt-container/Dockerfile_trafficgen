@@ -1,41 +1,35 @@
-FROM centos
+FROM centos:7
 
-ENV TREX_VER "v2.53"
+ENV TREX_VER "v2.82"
 ENV pci_list validation_seconds search_seconds sniff_seconds loss_ratio flows frame_size
 
 RUN yum -y --enablerepo=extras install epel-release dpdk dpdk-tools \
-       git \
-       pciutils \
-       python \
-       python-pip \
-       wget \
-       net-tools \
-       iproute2 \
-       screen \
+       		pciutils \
+       		python \
+       		net-tools \
+       		iproute2 \
+       		tmux \
        && mkdir -p /opt/trex \
-       && mkdir /var/log/tgen \
-       && wget --no-cache https://trex-tgn.cisco.com/trex/release/$TREX_VER.tar.gz \
+       && mkdir -p /var/log/tgen \
+       && mkdir -p /root/tgen \
+       && curl -o /root/tgen/binary-search.py https://raw.githubusercontent.com/atheurer/trafficgen/master/binary-search.py \
+       && curl -o /root/tgen/trex_tg_lib.py https://raw.githubusercontent.com/atheurer/trafficgen/master/trex_tg_lib.py \
+       && curl -o /root/tgen/trex-txrx.py https://raw.githubusercontent.com/atheurer/trafficgen/master/trex-txrx.py \
+       && curl -o /root/tgen/trex-query.py https://raw.githubusercontent.com/atheurer/trafficgen/master/trex-query.py \
+       && curl -o /root/tgen/tg_lib.py https://raw.githubusercontent.com/atheurer/trafficgen/master/tg_lib.py \
+       && curl -k -o $TREX_VER.tar.gz https://trex-tgn.cisco.com/trex/release/$TREX_VER.tar.gz \
        && tar xzf $TREX_VER.tar.gz -C /opt/trex && ln -sf /opt/trex/${TREX_VER} /opt/trex/current \
-       && rm -f /$TREX_VER.tar.gz \
-       && rm -f /opt/trex/$TREX_VER/trex_client_$TREX_VER.tar.gz \
-       && export PY_SITE_PATH=$(python -c "import site; print(site.getsitepackages()[0])" | sed -e "s/lib64/lib/") \
-       && ln -sf /opt/trex/$TREX_VER/automation/trex_control_plane/interactive/trex ${PY_SITE_PATH} \
-       && sed -i -e "s/2048 /512 /" -e "s/2048\"/512\"/" /opt/trex/$TREX_VER/trex-cfg \
-       && yum remove -y python-pip \
-       && wget https://bootstrap.pypa.io/get-pip.py \
-       && python get-pip.py \
+       && rm -f $TREX_VER.tar.gz \
+       && curl -k https://bootstrap.pypa.io/get-pip.py | python - \
        && pip install -U pbr \
        && pip install -U setuptools \
        && pip install pathlib2 flask \
-       && wget -O /root/dumb-init https://github.com/Yelp/dumb-init/releases/download/v1.2.2/dumb-init_1.2.2_amd64 \
+       && curl -k -o /root/dumb-init https://github.com/Yelp/dumb-init/releases/download/v1.2.2/dumb-init_1.2.2_amd64 \
        && chmod +x /root/dumb-init \
-       && yum remove -y wget git \
        && yum clean all && rm -rf /var/cache/yum
-COPY api-server.py launch-trex.sh binary-search.py tg_lib.py trex-query.py trex-txrx.py trex_tg_lib.py /root/tgen/
+COPY api-server.py launch-trex.sh /root/tgen/
 COPY trafficgen_entry.sh /root/
 RUN chmod 777 /root/trafficgen_entry.sh /root/tgen/api-server.py /root/tgen/launch-trex.sh /root/tgen/binary-search.py /root/tgen/trex-query.py /root/tgen/trex-txrx.py
-ENV TREX_EXT_LIBS "/opt/trex/$TREX_VER/external_libs"
-
 
 ENTRYPOINT ["/root/dumb-init", "--"]
 CMD ["/root/trafficgen_entry.sh", "start"]

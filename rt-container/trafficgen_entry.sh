@@ -68,7 +68,7 @@ else
                 --use-src-port-flows=0 --use-dst-port-flows=0 --use-encap-src-ip-flows=0 --use-encap-dst-ip-flows=0 --use-encap-src-mac-flows=0 --use-encap-dst-mac-flows=0 \
                 --use-protocol-flows=0 --device-pairs=${device_pairs} --active-device-pairs=${device_pairs} --sniff-runtime=${sniff_seconds} \
                 --search-runtime=${search_seconds} --validation-runtime=${validation_seconds} --rate-unit=% --rate=100 --max-loss-pct=${loss_ratio} \
-                --traffic-direction=bidirectional --frame-size=${size} --num-flows=${flows}
+                --traffic-direction=bidirectional --frame-size=${size} --num-flows=${flows} --rate-tolerance-failure=fail
         done
         sleep infinity
     fi
