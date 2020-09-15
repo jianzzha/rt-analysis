@@ -3,9 +3,7 @@
 function sigfunc() {
     pid=`pgrep binary-search`
     [ -z ${pid} ] || kill ${pid}
-    pid=`pgrep api-server`
-    [ -z ${pid} ] || kill ${pid}
-    screen -X -S trex quit
+    tmux kill-session -t trex
     exit 0
 }
 
@@ -61,21 +59,22 @@ else
             frame_size=64
         fi
         cd /root/tgen
-        eval ./launch-trex.sh --devices=${pci_list} --use-vlan=y
+        ./launch-trex.sh --devices=${pci_list} --use-vlan=y
         sleep 1
         for size in $(echo ${frame_size} | sed -e 's/,/ /g'); do
-            eval ./binary-search.py --traffic-generator=trex-txrx --rate-tolerance=10 --use-src-ip-flows=1 --use-dst-ip-flows=1 --use-src-mac-flows=1 --use-dst-mac-flows=1 \
+            ./binary-search.py --traffic-generator=trex-txrx --rate-tolerance=10 --use-src-ip-flows=1 --use-dst-ip-flows=1 --use-src-mac-flows=1 --use-dst-mac-flows=1 \
                 --use-src-port-flows=0 --use-dst-port-flows=0 --use-encap-src-ip-flows=0 --use-encap-dst-ip-flows=0 --use-encap-src-mac-flows=0 --use-encap-dst-mac-flows=0 \
                 --use-protocol-flows=0 --device-pairs=${device_pairs} --active-device-pairs=${device_pairs} --sniff-runtime=${sniff_seconds} \
-                --search-runtime=${search_seconds} --validation-runtime=${validation_seconds} --rate-unit=% --rate=100 --max-loss-pct=${loss_ratio} \
-                --traffic-direction=bidirectional --frame-size=${size} --num-flows=${flows} --rate-tolerance-failure=fail
+                --search-runtime=${search_seconds} --validation-runtime=${validation_seconds} --max-loss-pct=${loss_ratio} \
+                --traffic-direction=bidirectional --frame-size=${size} --num-flows=${flows} --rate-tolerance-failure=fail \
+                --rate-unit=% --rate=100
         done
         sleep infinity
     fi
     
     if [ "$1" == "api-server" ]; then
         cd /root/tgen
-        eval ./launch-trex.sh --devices=${pci_list} --use-vlan=y
+        ./launch-trex.sh --devices=${pci_list} --use-vlan=y
         ./api-server.py --output-dir="${output_dir}" --device-pairs="${device_pairs}"
     fi
 fi

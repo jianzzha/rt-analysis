@@ -166,10 +166,6 @@ if [ -d ${trex_dir} -a -d ${tmp_dir} ]; then
             echo "  port_limit    : 2" >>${tmp_yaml_file}
 	fi
 
-	interface_state_cmd="./dpdk_setup_ports.py -t"
-	echo "interface status: ${interface_state_cmd}"
-	${interface_state_cmd}
-
 	if [ "${use_l2}" == "y" ]; then
 	    # newer versions of trex require the interface to be bound
 	    # to a Linux driver in order to determine it's MAC address

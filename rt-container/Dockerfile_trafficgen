@@ -20,16 +20,14 @@ RUN yum -y --enablerepo=extras install epel-release dpdk dpdk-tools \
        && curl -k -o $TREX_VER.tar.gz https://trex-tgn.cisco.com/trex/release/$TREX_VER.tar.gz \
        && tar xzf $TREX_VER.tar.gz -C /opt/trex && ln -sf /opt/trex/${TREX_VER} /opt/trex/current \
        && rm -f $TREX_VER.tar.gz \
+       && rm -f /opt/trex/$TREX_VER/trex_client_$TREX_VER.tar.gz \
        && curl -k https://bootstrap.pypa.io/get-pip.py | python - \
-       && pip install -U pbr \
-       && pip install -U setuptools \
-       && pip install pathlib2 flask \
-       && curl -k -o /root/dumb-init https://github.com/Yelp/dumb-init/releases/download/v1.2.2/dumb-init_1.2.2_amd64 \
+       && curl -L -k -o /root/dumb-init https://github.com/Yelp/dumb-init/releases/download/v1.2.2/dumb-init_1.2.2_x86_64 \
        && chmod +x /root/dumb-init \
        && yum clean all && rm -rf /var/cache/yum
-COPY api-server.py launch-trex.sh /root/tgen/
+COPY launch-trex.sh /root/tgen/
 COPY trafficgen_entry.sh /root/
-RUN chmod 777 /root/trafficgen_entry.sh /root/tgen/api-server.py /root/tgen/launch-trex.sh /root/tgen/binary-search.py /root/tgen/trex-query.py /root/tgen/trex-txrx.py
+RUN chmod 777 /root/trafficgen_entry.sh /root/tgen/launch-trex.sh /root/tgen/binary-search.py /root/tgen/trex-query.py /root/tgen/trex-txrx.py
 
 ENTRYPOINT ["/root/dumb-init", "--"]
 CMD ["/root/trafficgen_entry.sh", "start"]
