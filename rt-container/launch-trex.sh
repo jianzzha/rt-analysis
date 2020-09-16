@@ -10,12 +10,18 @@ use_l2="n"
 use_vlan="n"
 devices=""
 yaml_file=""
+no_tmux="n"
 
-opts=$(getopt -q -o c: --longoptions "tmp-dir:,trex-dir:,use-ht:,use-l2:,use-vlan:,devices:,yaml-file:" -n "getopt.sh" -- "$@")
+opts=$(getopt -q -o c: --longoptions "no-tmux:,tmp-dir:,trex-dir:,use-ht:,use-l2:,use-vlan:,devices:,yaml-file:" -n "getopt.sh" -- "$@")
 if [ $? -ne 0 ]; then
     printf -- "$*\n"
     printf -- "\n"
     printf -- "\tThe following options are available:\n\n"
+    printf -- "\n"
+    printf -- "--no-tmux=<y|n>\n"
+    printf -- "  Run trex server without using tmux.\n"
+    printf -- "  The purpose is put trex server in its own container.\n"
+    printf -- "  Default is ${no_tmux}\n"
     printf -- "\n"
     printf -- "--tmp-dir=str\n"
     printf -- "  Directory where temporary files should be stored.\n"
@@ -81,6 +87,13 @@ while true; do
             shift
             if [ -n "${1}" ]; then
                 use_vlan=${1}
+                shift
+            fi
+            ;;
+        --no-tmux)
+            shift
+            if [ -n "${1}" ]; then
+                no_tmux=${1}
                 shift
             fi
             ;;
@@ -214,21 +227,10 @@ if [ -d ${trex_dir} -a -d ${tmp_dir} ]; then
     cat ${yaml_file}
     echo "-------------------------------------------------------------------"
     rm -fv /tmp/trex.server.out
-    tmux new-session -d -n server -s trex "bash -c '${trex_server_cmd} | tee /tmp/trex.server.out'"
-
-    # wait for trex server to be ready                                                                                                                                                                                                    
-    count=60
-    num_ports=0
-    while [ ${count} -gt 0 -a ${num_ports} -lt 2 ]; do
-        sleep 1
-        num_ports=`netstat -tln | grep -E :4500\|:4501 | wc -l`
-        ((count--))
-    done
-    if [ ${num_ports} -eq 2 ]; then
-        echo "trex-server is ready"
+    if [ "${no_tmux}" == "y" ]; then
+        ${trex_server_cmd} | tee /tmp/trex.server.out
     else
-        echo "ERROR: trex-server could not start properly. Check \'tmux attach -t trex\' and/or \'cat /tmp/trex.server.out\'" 
-        exit 1
+        tmux new-session -d -n server -s trex "bash -c '${trex_server_cmd} | tee /tmp/trex.server.out'"
     fi
 else
     echo "ERROR: ${trex_dir} and/or ${tmp_dir} does not exist"
