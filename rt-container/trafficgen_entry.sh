@@ -12,7 +12,6 @@ trap sigfunc SIGTERM SIGINT SIGUSR1
 if [ -z "$1" ]; then
     # do nothing
     sleep infinity
-    exit 0 
 
 else
     if [ -z "${pci_list}" ]; then
@@ -69,12 +68,10 @@ else
                 --traffic-direction=bidirectional --frame-size=${size} --num-flows=${flows} --rate-tolerance-failure=fail \
                 --rate-unit=% --rate=100
         done
-        sleep infinity
     fi
-    
-    if [ "$1" == "api-server" ]; then
-        cd /root/tgen
-        ./launch-trex.sh --devices=${pci_list} --use-vlan=y
-        ./api-server.py --output-dir="${output_dir}" --device-pairs="${device_pairs}"
-    fi
+    sleep infinity
 fi
+
+tmux kill-session -t trex
+exit 0
+
