@@ -4,34 +4,107 @@ import grpc
 import rpc_pb2
 import rpc_pb2_grpc
 import time
+import argparse
 
+def actionGetResult(stub):
+    response = stub.isResultAvailable(rpc_pb2.IsResultAvailableParams())
+    if not response.isResultAvailable:
+        print("test result not avalable.")
+        return
+    response = stub.getResult(rpc_pb2.GetResultParams())
+    print("port %s rx_pps: %.2f" %(response.stats[0].port, response.stats[0].rx_pps))
+    print("port %s rx_pps: %.2f" %(response.stats[1].port, response.stats[1].rx_pps))
 
-def run():
-    with grpc.insecure_channel('localhost:50051') as channel:
+def actionStartTrafficgen(args, stub):
+    response = stub.startTrafficgen(rpc_pb2.BinarySearchParams(
+            search_runtime=args.search_runtime,
+            validation_runtime=args.validation_runtime,
+            num_flows=args.num_flows,
+            device_pairs=args.device_pairs,
+            frame_size=args.frame_size,
+            max_loss_pct=args.max_loss_pct,
+            sniff_runtime=args.sniff_runtime
+            ))
+    print("start trafficgen: %s" % ("success" if response.success else "fail"))
+
+def actionStopTrafficgen(stub):
+    response = stub.stopTrafficgen(rpc_pb2.StopTrafficgenParams())
+    print("stop trafficgen: %s" % ("success" if response.success else "fail"))
+
+def run(args):
+    with grpc.insecure_channel("%s:%d" % (args.server_addr, args.server_port)) as channel:
         stub = rpc_pb2_grpc.TrafficgenStub(channel)
+
         response = stub.isTrafficgenRunning(rpc_pb2.IsTrafficgenRunningParams())
-        print("Trafficgen is running" if response.isTrafficgenRunning else "Trafficgen is not running")
-        response = stub.getResult(rpc_pb2.GetResultParams())
-        print("port %s rx_pps: %.2f" %(response.stats[0].port, response.stats[0].rx_pps))
-        print("port %s rx_pps: %.2f" %(response.stats[1].port, response.stats[1].rx_pps))
-        response = stub.isResultAvailable(rpc_pb2.IsResultAvailableParams())
-        print("result %s available" %("is" if response.isResultAvailable else "not"))
-        response = stub.startTrafficgen(rpc_pb2.BinarySearchParams(
-            search_runtime=10,
-            validation_runtime=10,
-            num_flows=1,
-            device_pairs="0:1",
-            frame_size=64,
-            max_loss_pct=0.002,
-            sniff_runtime=10
-        ))
-        print("start trafficgen: %s" % ("success" if response.success else "fail"))
-        """
-        time.sleep(3)
-        response = stub.stopTrafficgen(rpc_pb2.StopTrafficgenParams())
-        print("stop trafficgen: %s" % ("success" if response.success else "fail"))
-        """
+        print("Trafficgen is currently %s running" %("" if response.isTrafficgenRunning else "not"))
+
+        if args.action == "start":
+            actionStartTrafficgen(args, stub)
+        elif args.action == "stop":
+            actionStopTrafficgen(stub)
+        elif args.action == "get-result":
+            actionGetResult(stub)
+        else:
+            print("invalid action: %s" %(args.action))
 
 if __name__ == '__main__':
     logging.basicConfig()
-    run()
+    parser = argparse.ArgumentParser(description='Trafficgen client')
+    parser.add_argument('action',
+                        help='specify what action the server will take',
+                        choices=['start', 'stop', 'get-result']
+                        )
+    parser.add_argument('--frame-size',
+                        dest='frame_size',
+                        help='L2 frame size in bytes',
+                        default=64,
+                        type=int
+                        )
+    parser.add_argument('--num-flows',
+                        dest='num_flows',
+                        help='number of unique network flows',
+                        default=1,
+                        type = int,
+                        )
+    parser.add_argument('--search-runtime',
+                        dest='search_runtime',
+                        default=10,
+                        help='test duration in seconds for each search iteration',
+                        type=int
+                        )
+    parser.add_argument('--validation-runtime',
+                        dest='validation_runtime',
+                        help='test duration in seconds during final validation',
+                        default=30,
+                        type = int
+                        )
+    parser.add_argument('--sniff-runtime',
+                        dest='sniff_runtime',
+                        help='test duration in seconds during sniff phase',
+                        default = 0,
+                        type = int
+                        )
+    parser.add_argument('--max-loss-pct',
+                        dest='max_loss_pct',
+                        help='maximum percentage of packet loss',
+                        default=0.002,
+                        type = float
+                        )
+    parser.add_argument('--device-pairs',
+                        dest='device_pairs',
+                        help='list of device pairs in the form A:B[,C:D][,E:F][,...]',
+                        default="0:1"
+                        )
+    parser.add_argument('--server-addr',
+                        dest='server_addr',
+                        help='trafficgen server address',
+                        default='localhost'
+                        )
+    parser.add_argument('--server-port',
+                        dest='server_port',
+                        help='trafficgen server port',
+                        default=50051,
+                        type = int
+                        )
+    args = parser.parse_args()
+    run(args)
