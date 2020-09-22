@@ -31,17 +31,21 @@ def actionStopTrafficgen(stub):
     response = stub.stopTrafficgen(rpc_pb2.StopTrafficgenParams())
     print("stop trafficgen: %s" % ("success" if response.success else "fail"))
 
+def actionStatus(stub):
+    response = stub.isTrafficgenRunning(rpc_pb2.IsTrafficgenRunningParams())
+    print("trafficgen is currently %s running" %("" if response.isTrafficgenRunning else "not"))
+    response = stub.isResultAvailable(rpc_pb2.IsResultAvailableParams())
+    print("test result is avalable: %s" % ("yes" if response.isResultAvailable else "no"))
+
 def run(args):
     with grpc.insecure_channel("%s:%d" % (args.server_addr, args.server_port)) as channel:
         stub = rpc_pb2_grpc.TrafficgenStub(channel)
-
-        response = stub.isTrafficgenRunning(rpc_pb2.IsTrafficgenRunningParams())
-        print("Trafficgen is currently %s running" %("" if response.isTrafficgenRunning else "not"))
-
         if args.action == "start":
             actionStartTrafficgen(args, stub)
         elif args.action == "stop":
             actionStopTrafficgen(stub)
+        elif args.action == "status":
+            actionStatus(stub)
         elif args.action == "get-result":
             actionGetResult(stub)
         else:
@@ -52,7 +56,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Trafficgen client')
     parser.add_argument('action',
                         help='specify what action the server will take',
-                        choices=['start', 'stop', 'get-result']
+                        choices=['start', 'stop', 'status', 'get-result']
                         )
     parser.add_argument('--frame-size',
                         dest='frame_size',
